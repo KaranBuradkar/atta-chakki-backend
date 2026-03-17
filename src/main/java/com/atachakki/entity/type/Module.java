@@ -8,5 +8,6 @@ public enum Module {
     STAFF,
     STAFF_PERMISSION,
     ORDER_ITEM_PRICE,
+    ORDER_ITEM,
     OPERATION
 }

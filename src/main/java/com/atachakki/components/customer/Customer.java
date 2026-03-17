@@ -1,13 +1,12 @@
 package com.atachakki.components.customer;
 
+import com.atachakki.components.customerLedger.CustomerLedger;
+import com.atachakki.components.customerLedger.CustomerLedgerType;
 import com.atachakki.components.shop.Shop;
 import com.atachakki.components.staff.ShopStaff;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "customers",
@@ -42,13 +41,19 @@ public class Customer {
     @Column(name = "deleted", nullable = false)
     private Boolean deleted;
 
+    @OneToOne(orphanRemoval = true, fetch = FetchType.LAZY)
+    private CustomerLedger customerLedger;
+
+    private CustomerLedgerType type;
+    private String balance;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Long createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Long updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "added_by_id", updatable = false, nullable = false)
@@ -128,19 +133,19 @@ public class Customer {
         this.deleted = deleted;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Long getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Long getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(Long updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -159,5 +164,29 @@ public class Customer {
     public void setAddedBy(ShopStaff addedBy) {
         this.addedBy = addedBy;
         setUpdatedBy(addedBy);
+    }
+
+    public CustomerLedger getDueOrRefund() {
+        return customerLedger;
+    }
+
+    public void setDueOrRefund(CustomerLedger customerLedger) {
+        this.customerLedger = customerLedger;
+    }
+
+    public CustomerLedgerType getType() {
+        return type;
+    }
+
+    public void setType(CustomerLedgerType type) {
+        this.type = type;
+    }
+
+    public String getBalance() {
+        return balance;
+    }
+
+    public void setBalance(String balance) {
+        this.balance = balance;
     }
 }

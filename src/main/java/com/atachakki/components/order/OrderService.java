@@ -17,6 +17,9 @@ public interface OrderService {
             Long shopId, Long customerId, Integer page,
             Integer size, String direction, String sort);
 
+    @PreAuthorize("@permissionGuard.check(#shopId, 'ORDER', 'READ')")
+    String findTotalCustomerBalance(Long shopId, Long customerId);
+
     @PreAuthorize("@permissionGuard.check(#shopId, 'ORDER', 'WRITE')")
     OrderResponseDto createOrder(Long shopId, Long customerId, @Valid OrderRequestDto requestDto);
 

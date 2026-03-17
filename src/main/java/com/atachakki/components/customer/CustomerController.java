@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 
 @Tag(name = "Customer Module", description = "Operations with customer data")
 @RestController
@@ -103,6 +104,26 @@ public class CustomerController extends BaseController {
     ) {
         CustomerResponseDto response = customerService.create(shopId, requestDto);
         return apiResponse(HttpStatus.CREATED, "New customer register successfully", response);
+    }
+
+    @ApiResponses(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "201",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CustomerResponseDto.class)
+                    )
+            )
+    )
+    @Operation(summary = "Create customer", description = "Register a new customer for a shop")
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<List<CustomerResponseDto>>> createCustomer(
+            @Parameter(description = "Shop ID", required = true)
+            @PathVariable("shopId") Long shopId,
+            @Valid @RequestBody List<CustomerRequestDto> requestDto
+    ) {
+        List<CustomerResponseDto> response = customerService.createAll(shopId, requestDto);
+        return apiResponse(HttpStatus.CREATED, "New customers register successfully", response);
     }
 
     @ApiResponses(

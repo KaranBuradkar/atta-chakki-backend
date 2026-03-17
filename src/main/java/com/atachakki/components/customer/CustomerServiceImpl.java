@@ -1,6 +1,11 @@
 package com.atachakki.components.customer;
 
+import com.atachakki.components.customerLedger.CustomerLedger;
+import com.atachakki.components.customerLedger.CustomerLedgerRepository;
+import com.atachakki.components.customerLedger.CustomerLedgerStatus;
+import com.atachakki.components.customerLedger.CustomerLedgerType;
 import com.atachakki.components.operation.ShopOperationService;
+import com.atachakki.components.order.OrderRepository;
 import com.atachakki.components.shop.Shop;
 import com.atachakki.components.staff.ShopStaff;
 import com.atachakki.entity.User;
@@ -20,8 +25,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -33,19 +41,25 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerMapper customerMapper;
     private final ShopStaffRepository shopStaffRepository;
     private final ShopOperationService shopOperationService;
+    private final OrderRepository orderRepository;
+    private final CustomerLedgerRepository customerLedgerRepository;
 
     public CustomerServiceImpl(
             CustomerRepository customerRepository,
             ShopRepository shopRepository,
             CustomerMapper customerMapper,
             ShopStaffRepository shopStaffRepository,
-            ShopOperationService shopOperationService
+            ShopOperationService shopOperationService,
+            OrderRepository orderRepository,
+            CustomerLedgerRepository customerLedgerRepository
     ) {
         this.customerRepository = customerRepository;
         this.shopRepository = shopRepository;
         this.customerMapper = customerMapper;
         this.shopStaffRepository = shopStaffRepository;
         this.shopOperationService = shopOperationService;
+        this.orderRepository = orderRepository;
+        this.customerLedgerRepository = customerLedgerRepository;
     }
 
     @Override
@@ -63,6 +77,11 @@ public class CustomerServiceImpl implements CustomerService {
             customerPage = customerRepository
                     .findByShopIdAndDeletedFalse(shopId, PageRequest.of(page, size, dir, sort));
         }
+        customerPage.forEach(c -> {
+            BalanceDto dto = getCustomerBalance(shopId, c);
+            c.setBalance(dto.balance);
+            c.setType(dto.type);
+        });
         return customerPage.map(customerMapper::toResponseShortDto);
     }
 
@@ -81,16 +100,81 @@ public class CustomerServiceImpl implements CustomerService {
         Shop shop = fetchShopByShopId(shopId);
         ShopStaff staff = getCurrentStaff(shopId);
 
+        // create customer entity
         Customer customer = customerMapper.toEntity(requestDto);
         customer.setShop(shop);
         customer.setAddedBy(staff);
         customer.setBlock(false);
         customer.setDeleted(false);
         Customer response = customerRepository.save(customer);
+        // create dueRefund entity
+        createNewDueRefund(shopId, response, requestDto.getDueRefundType(), requestDto.getBalance(), requestDto.getDate());
+        // prepare response
+        BalanceDto dto = getCustomerBalance(shopId, customer);
+        response.setBalance(dto.balance);
+        response.setType(dto.type);
         CustomerResponseDto responseDto = customerMapper.toResponseDto(response);
         shopOperationService.createModule(shopId, response.getUpdatedBy().getId(), Module.CUSTOMER,
                 responseDto.id(), stringCustomer(responseDto));
         return responseDto;
+    }
+
+    @Override
+    public List<CustomerResponseDto> createAll(Long shopId, List<CustomerRequestDto> requestDto) {
+        Shop shop = fetchShopByShopId(shopId);
+        ShopStaff staff = getCurrentStaff(shopId);
+
+        List<CustomerResponseDto> customers = requestDto.stream().map(req -> {
+            // create customer entity
+            Customer customer = customerMapper.toEntity(req);
+            customer.setShop(shop);
+            customer.setAddedBy(staff);
+            customer.setBlock(false);
+            customer.setDeleted(false);
+
+            Customer response = customerRepository.save(customer);
+
+            // create dueRefund entity
+            createNewDueRefund(shopId, response, req.getDueRefundType(), req.getBalance(), req.getDate());
+            // prepare response
+            BalanceDto dto = getCustomerBalance(shopId, response);
+            response.setBalance(dto.balance);
+            response.setType(dto.type);
+            CustomerResponseDto responseDto = customerMapper.toResponseDto(response);
+            shopOperationService.createModule(shopId, response.getUpdatedBy().getId(), Module.CUSTOMER,
+                    responseDto.id(), stringCustomer(responseDto));
+            return responseDto;
+        }).toList();
+
+        return customers;
+    }
+
+    private void createNewDueRefund(Long shopId, Customer customer, CustomerLedgerType type, BigDecimal balance, Long date) {
+        CustomerLedger customerLedger = new CustomerLedger(customer, type, balance, CustomerLedgerStatus.PENDING, date, getCurrentStaff(shopId), getCurrentStaff(shopId));
+        customerLedger.setCustomer(customer);
+        customer.setDueOrRefund(customerLedger);
+        customerLedgerRepository.save(customerLedger);
+    }
+
+    private BalanceDto getCustomerBalance(Long shopId, Customer customer) {
+        BigDecimal orderTotal = Optional.ofNullable(orderRepository.findTotalBalance(shopId, customer.getId()))
+                .orElse(BigDecimal.ZERO);
+
+        CustomerLedger customerLedger = customerLedgerRepository.findByCustomerId(customer.getId())
+                .orElseGet(() -> new CustomerLedger(customer, CustomerLedgerType.DUE, BigDecimal.ZERO, CustomerLedgerStatus.PENDING,
+                        System.currentTimeMillis(), null, null));
+
+        BigDecimal signedBalance;
+        if (customerLedger.getType() == CustomerLedgerType.DUE) {
+            signedBalance = orderTotal.add(customerLedger.getAmount());
+        } else {
+            signedBalance = orderTotal.subtract(customerLedger.getAmount());
+        }
+
+        // ✅ Compute display-ready balance — no mutation!
+        BigDecimal absBalance = signedBalance.abs().setScale(2, RoundingMode.HALF_UP);
+        CustomerLedgerType prefix = signedBalance.compareTo(BigDecimal.ZERO) >= 0 ? CustomerLedgerType.DUE : CustomerLedgerType.REFUND;
+        return new BalanceDto(prefix, absBalance.toString());
     }
 
     @Override
@@ -105,6 +189,9 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setBlock(block);
         customer.setUpdatedBy(staff);
         Customer updatedCustomer = customerRepository.save(customer);
+        BalanceDto dto = getCustomerBalance(shopId, customer);
+        updatedCustomer.setBalance(dto.balance);
+        updatedCustomer.setType(dto.type);
         CustomerResponseDto responseDto = customerMapper.toResponseDto(updatedCustomer);
 
         shopOperationService.updateModule(
@@ -140,6 +227,9 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setUpdatedBy(staff);
         fields.append(", updatedBy]");
         Customer saveCustomer = customerRepository.save(customer);
+        BalanceDto dto = getCustomerBalance(shopId, saveCustomer);
+        saveCustomer.setBalance(dto.balance);
+        saveCustomer.setType(dto.type);
         CustomerResponseDto responseDto = customerMapper.toResponseDto(saveCustomer);
         shopOperationService.updateModule(shopId, saveCustomer.getUpdatedBy().getId(),
                 Module.CUSTOMER, saveCustomer.getId(),
@@ -166,6 +256,11 @@ public class CustomerServiceImpl implements CustomerService {
         Sort.Direction dir = ("asc".equalsIgnoreCase(direction)) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Page<Customer> customers = customerRepository
                 .findByShopIdAndDeletedFalse(shopId, PageRequest.of(page, size, dir, name));
+        customers.forEach(c -> {
+            BalanceDto dto = getCustomerBalance(shopId, c);
+            c.setBalance(dto.balance);
+            c.setType(dto.type);
+        });
         return customers.map(customerMapper::toResponseDto);
     }
 
@@ -217,4 +312,6 @@ public class CustomerServiceImpl implements CustomerService {
         return String.format("{id=%s, name=%s, email=%s, specification=%s, block=%s, createdAt=%s}",
                 c.id(), c.name(), c.email(), c.specification(), c.block(), c.createdAt());
     }
+
+    private record BalanceDto(CustomerLedgerType type, String balance) {}
 }

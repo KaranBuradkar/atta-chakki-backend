@@ -69,6 +69,12 @@ public class OrderServiceImpl implements OrderService{
     }
 
     @Override
+    public String findTotalCustomerBalance(Long shopId, Long customerId) {
+        BigDecimal balance = orderRepository.findTotalBalance(shopId, customerId);
+        return balance.toString();
+    }
+
+    @Override
     @Transactional
     public OrderResponseDto createOrder(Long shopId, Long customerId, OrderRequestDto requestDto) {
         // validations

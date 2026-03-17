@@ -51,7 +51,7 @@ public class ShopStaffServiceImpl implements ShopStaffService {
     }
 
     @Override
-    public Page<ShopStaffResponseDto> findShopStaffs(
+    public Page<StaffResponseDto> findShopStaffs(
             Long shopId, Integer page, Integer size,
             String direction, String sort
     ) {
@@ -62,14 +62,14 @@ public class ShopStaffServiceImpl implements ShopStaffService {
     }
 
     @Override
-    public ShopStaffResponseDto findShopStaff(Long shopId, Long shopStaffId) {
+    public StaffResponseDto findShopStaff(Long shopId, Long shopStaffId) {
         ShopStaff staff = fetchStaffByIdAndShopId(shopStaffId, shopId);
         return shopStaffMapper.toResponseDto(staff);
     }
 
     @Override
     @Transactional
-    public ShopStaffResponseDto create(Long shopId, ShopStaffRequestDto requestDto) {
+    public StaffResponseDto create(Long shopId, StaffRequestDto requestDto) {
 
         // check staff already exist by username
         isStaffAlreadyExist(shopId, requestDto.getUsername());
@@ -85,7 +85,7 @@ public class ShopStaffServiceImpl implements ShopStaffService {
         entity.setShop(shop);
         entity.setAddedBy(addedByUserDetails);
         ShopStaff shopStaff = shopStaffRepository.save(entity);
-        ShopStaffResponseDto responseDto = shopStaffMapper.toResponseDto(shopStaff);
+        StaffResponseDto responseDto = shopStaffMapper.toResponseDto(shopStaff);
 
         shopOperationService.createModule(shopId, 99L, Module.STAFF, responseDto.id(), responseDto.toString());
         return responseDto;
@@ -93,13 +93,13 @@ public class ShopStaffServiceImpl implements ShopStaffService {
 
     @Override
     @Transactional
-    public ShopStaffResponseDto update(
+    public StaffResponseDto update(
             Long shopId, Long shopStaffId,
-            ShopStaffRequestDto requestDto
+            StaffRequestDto requestDto
     ) {
         ShopStaff staff = fetchStaffByIdAndShopId(shopStaffId, shopId);
 
-        ShopStaffResponseDto before = shopStaffMapper.toResponseDto(staff);
+        StaffResponseDto before = shopStaffMapper.toResponseDto(staff);
         StringBuilder fields = new StringBuilder("[");
 
         if (!staff.getStaffRole().equals(requestDto.getStaffRole())) {
@@ -109,7 +109,7 @@ public class ShopStaffServiceImpl implements ShopStaffService {
 
         fields.append("]");
         ShopStaff updated = shopStaffRepository.save(staff);
-        ShopStaffResponseDto responseDto = shopStaffMapper.toResponseDto(updated);
+        StaffResponseDto responseDto = shopStaffMapper.toResponseDto(updated);
 
         shopOperationService.updateModule(shopId, 99L, Module.STAFF, responseDto.id(),
                 fields.toString(), before.toString(), responseDto.toString());
@@ -124,7 +124,7 @@ public class ShopStaffServiceImpl implements ShopStaffService {
             log.warn("SHOP_OWNER can not leave the shop");
             throw new OwnerCanNotLeaveTheShopException(shopId, shopStaffId);
         }
-        ShopStaffResponseDto before = shopStaffMapper.toResponseDto(staff);
+        StaffResponseDto before = shopStaffMapper.toResponseDto(staff);
         staff.setActive(false);
         shopStaffRepository.save(staff);
         shopOperationService.deleteModule(shopId, 99L, Module.STAFF, before.id(), before.toString());

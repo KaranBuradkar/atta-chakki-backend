@@ -88,7 +88,6 @@ public class UserDetailsController extends BaseController {
     ) {
         UserDetailResponseDto responseDto =
                 userInfoDetailsService.update(updateRequest);
-
         return apiResponse(HttpStatus.OK, "User details updated successfully", responseDto);
     }
 

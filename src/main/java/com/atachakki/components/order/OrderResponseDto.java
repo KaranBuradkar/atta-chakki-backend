@@ -4,12 +4,11 @@ import com.atachakki.entity.type.PaymentStatus;
 import com.atachakki.entity.type.QuantityType;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public record OrderResponseDto(
         Long id,
         Long orderItemId,
+        Long customerId,
         String orderItemName,
         Integer quantity,
         QuantityType quantityType,
@@ -19,7 +18,7 @@ public record OrderResponseDto(
         String addedByName,
         Long updatedById,
         String updatedByName,
-        LocalDate orderDate,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Long orderDate,
+        Long createdAt,
+        Long updatedAt
 ) {}

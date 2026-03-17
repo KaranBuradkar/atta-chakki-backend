@@ -45,6 +45,15 @@ public class StaffPermissionServiceImpl implements StaffPermissionService{
     }
 
     @Override
+    public Page<PermissionResponseDto> findPermissions(Long shopId, Long staffId, Integer page,
+                                                       Integer size, String direction, String[] sort) {
+        Sort.Direction dir = ("asc".equalsIgnoreCase(direction)) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, size, dir, sort);
+//        return staffPermissionRepository.findPermissionsByStaffId(staffId, pageRequest);
+        return null;
+    }
+
+    @Override
     @Transactional
     public List<StaffPermissionResponseDto> create(
             Long shopId, Long staffId,

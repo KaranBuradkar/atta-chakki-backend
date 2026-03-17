@@ -7,14 +7,14 @@ public class ErrorResponse<T> {
     private final boolean success;
     private final String message;
     private final T details;
-    private final LocalDateTime timestamp;
+    private final Long timestamp;
     private final String path;
 
     public ErrorResponse(String message, T data, String path) {
         this.success = false;
         this.message = message;
         this.details = data;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = System.currentTimeMillis();
         this.path = path;
     }
 
@@ -34,7 +34,7 @@ public class ErrorResponse<T> {
         return details;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 

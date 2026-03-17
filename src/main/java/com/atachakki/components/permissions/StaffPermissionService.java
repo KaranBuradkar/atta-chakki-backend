@@ -15,10 +15,14 @@ public interface StaffPermissionService {
     Page<StaffPermissionResponseDto> findStaffPermissions(
             Long shopId, Long staffId, Integer page, Integer size, String direction, String[] sort);
 
-    @IsAdminOrShopOwnerOrShopkeeper
+    @PreAuthorize(value = "@permissionGuard.check(#shopId, 'STAFF_PERMISSION', 'READ')")
+    Page<PermissionResponseDto> findPermissions(Long shopId, Long staffId, Integer page,
+                                                Integer size, String direction, String[] sort);
+
+    @PreAuthorize(value = "@permissionGuard.check(#shopId, 'STAFF_PERMISSION', 'WRITE')")
     List<StaffPermissionResponseDto> create(
             Long shopId, Long staffId, @Valid List<StaffPermissionRequestDto> requestDto);
 
-    @IsAdminOrShopOwnerOrShopkeeper
+    @PreAuthorize(value = "@permissionGuard.check(#shopId, 'STAFF_PERMISSION', 'DELETE')")
     void delete(Long shopId, Long permissionId);
 }

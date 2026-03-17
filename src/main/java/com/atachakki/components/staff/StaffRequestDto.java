@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-public class ShopStaffRequestDto {
+public class StaffRequestDto {
 
     @Email(message = "Invalid email format")
     @Pattern(
@@ -17,7 +17,7 @@ public class ShopStaffRequestDto {
     @NotNull(message = "Staff role is required")
     private StaffRole staffRole;
 
-    public ShopStaffRequestDto() {}
+    public StaffRequestDto() {}
 
     public String getUsername() {
         return username;

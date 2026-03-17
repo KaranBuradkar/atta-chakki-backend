@@ -1,34 +1,42 @@
 package com.atachakki.components.customer;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.atachakki.components.customerLedger.CustomerLedgerType;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
 public class CustomerRequestDto {
 
+    @Size(min = 2, max = 150, message = "Name must be 2 to 150 characters")
     @NotBlank(message = "Name is required")
-    @JsonProperty("customer_name") private String name;
+    private String name;
 
-    @NotNull(message = "Debt is required")
+    @NotNull(message = "Balance is required")
     @DecimalMin(value = "0.0", message = "Debt must be positive")
-    @JsonProperty("customer_debt") private BigDecimal debt;
+    private BigDecimal balance;
 
     @Email(message = "Invalid email format")
-    @JsonProperty("customer_email") private String email;
+    private String email;
 
-    @JsonProperty("customer_specification") private String specification;
+    @Size(min = 2, max = 150, message = "Specification must be 2 to 150 characters")
+    private String specification;
+
+    @NotNull
+    private CustomerLedgerType customerLedgerType = CustomerLedgerType.DUE;
+
+    @NotNull
+    private Long date = System.currentTimeMillis();
 
     public CustomerRequestDto() {}
 
     public CustomerRequestDto(
             String name,
-            BigDecimal debt,
+            BigDecimal balance,
             String email,
             String specification
     ) {
         this.name = name;
-        this.debt = debt;
+        this.balance = balance;
         this.email = email;
         this.specification = specification;
     }
@@ -36,12 +44,37 @@ public class CustomerRequestDto {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public BigDecimal getDebt() { return debt; }
-    public void setDebt(BigDecimal debt) { this.debt = debt; }
+    public BigDecimal getBalance() { return balance; }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
     public String getSpecification() { return specification; }
     public void setSpecification(String specification) { this.specification = specification; }
+
+    public CustomerLedgerType getDueRefundType() {
+        return customerLedgerType;
+    }
+    public void setDueRefundType(CustomerLedgerType customerLedgerType) {
+        this.customerLedgerType = customerLedgerType;
+    }
+
+    public Long getDate() {
+        return date;
+    }
+
+    public void setDate(Long date) {
+        this.date = date;
+    }
+
+    @Override
+    public String toString() {
+        return "CustomerRequestDto{" +
+                "name='" + name + '\'' +
+                ", debt=" + balance +
+                ", email='" + email + '\'' +
+                ", specification='" + specification + '\'' +
+                '}';
+    }
 }

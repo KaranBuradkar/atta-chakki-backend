@@ -10,10 +10,9 @@ import jakarta.validation.constraints.Pattern;
 public class ShopRequestDto {
 
     @NotBlank(message = "shop must have a name")
-    @JsonProperty(value = "shop_name") private String name;
-    @JsonProperty(value = "shop_email") private String email;
+    private String name;
+    private String email;
 
-    @JsonProperty(value = "shop_phone_no")
     @NotBlank(message = "shop must have public contact number")
     @Pattern(
             regexp = "^(?:(?:\\+91[\\s-]?)|(?:0)|(?:91))?(?:[6-9]\\d{9}|[1-9]\\d{2,4}[\\s-]?\\d{6,8})$",
@@ -21,10 +20,10 @@ public class ShopRequestDto {
     )
     private String phoneNo;
 
-    @JsonProperty(value = "location_url") private String locationUrl;
+    private String locationUrl;
 
     @NotNull(message = "Shop must have address")
-    @JsonProperty(value = "shop_address") private @Valid AddressDto addressDto;
+    private @Valid AddressDto addressDto;
 
     public ShopRequestDto() {}
 

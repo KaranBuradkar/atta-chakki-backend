@@ -66,7 +66,7 @@ public class OrderItemController extends BaseController {
         Page<OrderItemResponseDto> responsePage =
                 orderItemService.findOrderItems(page, size, direction, sort);
 
-        return apiResponse(HttpStatus.FOUND, "OrderItems fetched successfully", responsePage);
+        return apiResponse(HttpStatus.OK, "OrderItems fetched successfully", responsePage);
     }
 
     @Operation(

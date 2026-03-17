@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public interface PaymentService {
 
     @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'READ')")
-    Page<PaymentResponseShortDto> findPayments(
+    Page<PaymentResponseDto> findPayments(
             Long shopId, Long customerId, Integer page, Integer size, String direction, String sort);
 
     @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'READ')")
@@ -17,6 +17,9 @@ public interface PaymentService {
 
     @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'WRITE')")
     PaymentResponseDto create(Long shopId, Long customerId, PaymentBundleRequestDto requestDto);
+
+    @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'WRITE')")
+    PaymentResponseDto createByAmount(Long shopId, Long customerId, PaymentRequestDto requestDto);
 
     @IsAdminOrShopOwnerOrShopkeeper
     PaymentResponseDto update(Long shopId, Long paymentId, PaymentRequestDto paymentRequestDto);

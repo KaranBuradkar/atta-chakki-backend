@@ -40,7 +40,7 @@ public class PaymentController extends BaseController {
                             responseCode = "302",
                             description = "Payments fetched successfully",
                             content = @Content(
-                                    schema = @Schema(implementation = PaymentResponseShortDto.class)
+                                    schema = @Schema(implementation = PaymentResponseDto.class)
                             )
                     ),
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -50,7 +50,7 @@ public class PaymentController extends BaseController {
             }
     )
     @GetMapping("/customers/{customerId}")
-    public ResponseEntity<ApiResponse<Page<PaymentResponseShortDto>>> fetchPayments(
+    public ResponseEntity<ApiResponse<Page<PaymentResponseDto>>> fetchPayments(
             @Parameter(description = "Shop ID", example = "1", required = true)
             @PathVariable Long shopId,
 
@@ -69,10 +69,10 @@ public class PaymentController extends BaseController {
             @Parameter(description = "Sort field", example = "createdAt")
             @RequestParam(defaultValue = "createdAt") String sort
     ) {
-        Page<PaymentResponseShortDto> responseDtoPage =
+        Page<PaymentResponseDto> responseDtoPage =
                 paymentService.findPayments(shopId, customerId, page, size, direction, sort);
 
-        return apiResponse(HttpStatus.FOUND, "Payments fetched successfully", responseDtoPage);
+        return apiResponse(HttpStatus.OK, "Payments fetched successfully", responseDtoPage);
     }
 
     @Operation(
@@ -133,6 +133,35 @@ public class PaymentController extends BaseController {
         PaymentResponseDto responseDto =
                 paymentService.create(shopId, customerId, requestDto);
 
+        return apiResponse(HttpStatus.CREATED, "Payment successful", responseDto);
+    }
+
+    @Operation(
+            summary = "Create payment",
+            description = "Create a new payment by amount for a customer",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "201",
+                            description = "Payment created successfully"
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid request body"
+                    )
+            }
+    )
+    @PostMapping("/customers/{customerId}/by-amount")
+    public ResponseEntity<ApiResponse<PaymentResponseDto>> createPayment(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Customer ID", example = "10", required = true)
+            @PathVariable Long customerId,
+
+            @Valid @RequestBody PaymentRequestDto requestDto
+    ) {
+        PaymentResponseDto responseDto =
+                paymentService.createByAmount(shopId, customerId, requestDto);
         return apiResponse(HttpStatus.CREATED, "Payment successful", responseDto);
     }
 

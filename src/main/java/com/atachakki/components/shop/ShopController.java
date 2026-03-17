@@ -21,10 +21,35 @@ import org.springframework.web.bind.annotation.*;
 public class ShopController extends BaseController {
 
     private final ShopService shopService;
+    private final AnalyticsService analyticsService;
 
-    public ShopController(ShopService shopService, HttpServletRequest request) {
+    public ShopController(ShopService shopService,
+                          HttpServletRequest request, AnalyticsService analyticsService) {
         super(request);
         this.shopService = shopService;
+        this.analyticsService = analyticsService;
+    }
+
+    @ApiResponses(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Fetch shop analytical details",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ShopOverviewResponseDto.class)
+                    )
+            )
+    )
+    @Operation(
+            summary = "Fetch shop details",
+            description = "Fetch shop analytics details by shopId"
+    )
+    @GetMapping("/{shopId}/overview")
+    public ResponseEntity<ApiResponse<ShopOverviewResponseDto>> getOverview(
+            @PathVariable Long shopId
+    ) {
+        ShopOverviewResponseDto response = analyticsService.getShopOverview(shopId);
+        return apiResponse(HttpStatus.OK, "Overview Received", response);
     }
 
     @ApiResponses(
@@ -150,7 +175,6 @@ public class ShopController extends BaseController {
     public ResponseEntity<ApiResponse<ShopResponseDto>> updateShop(
             @Parameter(description = "ID of the shop", required = true)
             @PathVariable("shopId") Long shopId,
-
             @RequestBody ShopRequestDto requestDto
     ) {
         ShopResponseDto responseDto =

@@ -34,13 +34,13 @@ public class ShopOperation {
     @Column(name = "operation", nullable = false, updatable = false)
     private Operation operation;       // CREATE / UPDATE / DELETE
 
-    @Column(name = "changed_fields", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "changed_fields", columnDefinition = "TEXT")
     private String changedFields;   // ["name","phone","email"]
 
-    @Column(name = "before_values", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "before_values", columnDefinition = "TEXT")
     private String beforeValues;    // {"name":"Old","phone":"111"}
 
-    @Column(name = "after_fields", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "after_fields", columnDefinition = "TEXT")
     private String afterValues;     // {"name":"New","phone":"222"}
 
     @CreationTimestamp

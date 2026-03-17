@@ -44,11 +44,11 @@ public class PermissionGuard {
 
         // OWNER / SHOPKEEPER bypass
         if (authorities.stream().anyMatch(a -> a.getAuthority().equals(AuthorityBuilder.owner(shopId)))) {
-            log.info("ACCESS GRANTED: '{}' used {}", authentication.getName(), AuthorityBuilder.owner(shopId));
+            log.debug("ACCESS GRANTED: '{}' used {}", authentication.getName(), AuthorityBuilder.owner(shopId));
             return true;
         }
         if (authorities.stream().anyMatch(a -> a.getAuthority().equals(AuthorityBuilder.shopkeeper(shopId)))) {
-            log.info("ACCESS GRANTED: '{}' used {}", authentication.getName(), AuthorityBuilder.shopkeeper(shopId));
+            log.debug("ACCESS GRANTED: '{}' used {}", authentication.getName(), AuthorityBuilder.shopkeeper(shopId));
             return true;
         }
 

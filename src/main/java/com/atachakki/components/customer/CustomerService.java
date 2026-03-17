@@ -1,9 +1,12 @@
 package com.atachakki.components.customer;
 
 import com.atachakki.security.authorizationValidation.IsAdminOrShopOwnerOrShopkeeper;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public interface CustomerService {
@@ -17,6 +20,9 @@ public interface CustomerService {
 
     @PreAuthorize("@permissionGuard.check(#shopId, 'CUSTOMER', 'WRITE')")
     CustomerResponseDto create(Long shopId, CustomerRequestDto requestDto);
+
+    @PreAuthorize("@permissionGuard.check(#shopId, 'CUSTOMER', 'WRITE')")
+    List<CustomerResponseDto> createAll(Long shopId, @Valid List<CustomerRequestDto> requestDto);
 
     @PreAuthorize("@permissionGuard.check(#shopId, 'CUSTOMER', 'UPDATE')")
     CustomerResponseDto updateCustomerBlockStatus(Long shopId, Long customerId, Boolean block);

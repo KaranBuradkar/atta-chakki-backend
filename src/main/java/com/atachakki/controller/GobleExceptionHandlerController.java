@@ -135,7 +135,7 @@ public class GobleExceptionHandlerController {
 
     @ExceptionHandler(BusinessLogicException.class)
     public ResponseEntity<ErrorResponse<Object>> handleBusinessLogicException(BusinessLogicException e) {
-        log.warn("Business logic exception: {}", e.getMessage());
+        log.warn("Business logic exception: {}", e.getMessage(), e);
         return errorResponse(HttpStatus.NOT_FOUND, e.getMessage(), e.getData());
     }
 

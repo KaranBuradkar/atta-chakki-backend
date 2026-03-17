@@ -27,7 +27,7 @@ public class OrderRequestDto {
     private PaymentStatus paymentStatus;
 
     @NotNull(message = "Order's Date is required")
-    private LocalDate orderDate = LocalDate.now();
+    private Long orderDate = System.currentTimeMillis();
 
     public OrderRequestDto() {}
 
@@ -71,11 +71,11 @@ public class OrderRequestDto {
         this.orderItemName = orderItemName;
     }
 
-    public LocalDate getOrderDate() {
+    public Long getOrderDate() {
         return orderDate;
     }
 
-    public void setOrderDate(LocalDate orderDate) {
+    public void setOrderDate(Long orderDate) {
         this.orderDate = orderDate;
     }
 }

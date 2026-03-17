@@ -1,6 +1,5 @@
 package com.atachakki.security;
 
-import com.atachakki.entity.type.SystemRole;
 import com.atachakki.security.oauth2.OAuth2SuccessHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

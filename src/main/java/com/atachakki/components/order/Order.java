@@ -25,7 +25,7 @@ public class Order {
     private Customer customer;
 
     @Column(name = "order_date")
-    private LocalDate orderDate;
+    private Long orderDate;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
@@ -54,11 +54,11 @@ public class Order {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Long createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Long updatedAt;
 
     public Order() {}
 
@@ -134,27 +134,27 @@ public class Order {
         this.updatedBy = updatedBy;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Long getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Long getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(Long updatedAt) {
         this.updatedAt = updatedAt;
     }
 
-    public LocalDate getOrderDate() {
+    public Long getOrderDate() {
         return orderDate;
     }
 
-    public void setOrderDate(LocalDate orderDate) {
+    public void setOrderDate(Long orderDate) {
         this.orderDate = orderDate;
     }
 }

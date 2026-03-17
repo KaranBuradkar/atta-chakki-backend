@@ -17,8 +17,4 @@ public interface PaymentMapper {
     @Mapping(target = "receiverStaffId", source = "receiver.userDetail.id")
     @Mapping(target = "receiverName", source = "receiver.userDetail.name")
     PaymentResponseDto toResponseDto(Payment payment);
-
-    @Mapping(target = "customerId", source = "customer.id")
-    @Mapping(target = "receiverName", source = "receiver.userDetail.name")
-    PaymentResponseShortDto toResponseShortDto(Payment payment);
 }

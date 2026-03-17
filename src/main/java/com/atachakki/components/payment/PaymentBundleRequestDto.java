@@ -1,9 +1,7 @@
 package com.atachakki.components.payment;
 
-import com.atachakki.components.due.or.refund.DueOrRefundRequestDto;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.atachakki.components.customerLedger.CustomerLedgerRequestDto;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,10 +10,11 @@ import java.util.List;
 public class PaymentBundleRequestDto {
 
     @NotNull @NotEmpty
-    @JsonProperty(value = "orderIds")  private List<Long> orderIds;
+    private List<Long> orderIds;
     @NotNull
-    @JsonProperty(value = "payment") @Valid private PaymentRequestDto paymentRequestDto;
-    @JsonProperty(value = "dueOrRefund") @Valid private DueOrRefundRequestDto dueOrRefundRequestDto;
+    @Valid private PaymentRequestDto paymentRequestDto;
+    @Valid private CustomerLedgerRequestDto customerLedgerRequestDto;
+    @Valid private CustomerLedgerRequestDto nowNewCustomerLedgerRequestDto;
 
     public PaymentBundleRequestDto() {}
 
@@ -35,11 +34,19 @@ public class PaymentBundleRequestDto {
         this.paymentRequestDto = paymentRequestDto;
     }
 
-    public DueOrRefundRequestDto getDueOrRefundRequestDto() {
-        return dueOrRefundRequestDto;
+    public CustomerLedgerRequestDto getDueOrRefundRequestDto() {
+        return customerLedgerRequestDto;
     }
 
-    public void setDueOrRefundRequestDto(DueOrRefundRequestDto dueOrRefundRequestDto) {
-        this.dueOrRefundRequestDto = dueOrRefundRequestDto;
+    public void setDueOrRefundRequestDto(CustomerLedgerRequestDto customerLedgerRequestDto) {
+        this.customerLedgerRequestDto = customerLedgerRequestDto;
+    }
+
+    public CustomerLedgerRequestDto getNowNewDueOrRefundRequestDto() {
+        return nowNewCustomerLedgerRequestDto;
+    }
+
+    public void setNowNewDueOrRefundRequestDto(CustomerLedgerRequestDto nowNewCustomerLedgerRequestDto) {
+        this.nowNewCustomerLedgerRequestDto = nowNewCustomerLedgerRequestDto;
     }
 }

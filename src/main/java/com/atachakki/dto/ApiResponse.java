@@ -7,7 +7,7 @@ public class ApiResponse<T> {
     private final boolean success;
     private final String message;
     private final T data;
-    private final LocalDateTime timestamp;
+    private final Long timestamp;
     private final String path;
 
     public ApiResponse(boolean success, String message, T data, String path) {
@@ -15,7 +15,7 @@ public class ApiResponse<T> {
         this.message = message;
         this.data = data;
         this.path = path;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = System.currentTimeMillis();
     }
 
     public ApiResponse(boolean success, String message, String path) {
@@ -34,7 +34,7 @@ public class ApiResponse<T> {
         return data;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 

@@ -1,9 +1,11 @@
 package com.atachakki.repository;
 
+import com.atachakki.components.permissions.PermissionResponseDto;
 import com.atachakki.components.staff.ShopStaff;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;

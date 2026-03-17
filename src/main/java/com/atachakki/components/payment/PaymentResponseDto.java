@@ -3,7 +3,6 @@ package com.atachakki.components.payment;
 import com.atachakki.entity.type.PaymentStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public record PaymentResponseDto (
     Long id,
@@ -14,8 +13,8 @@ public record PaymentResponseDto (
     Long receiverStaffId,
     String receiverName,
     PaymentStatus status,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    Long createdAt,
+    Long updatedAt
 ){
     @Override
     public String toString() {

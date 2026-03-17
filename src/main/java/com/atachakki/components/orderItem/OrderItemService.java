@@ -6,7 +6,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 public interface OrderItemService {
 
-    @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'ORDER_ITEM', 'READ')")
+//    @PreAuthorize("hasAnyAuthority('SHOP_'+#shopId+'_OWNER') OR " +
+//            "@permissionGuard.check(authentication, #shopId, 'ORDER_ITEM', 'READ')")
     Page<OrderItemResponseDto> findOrderItems(Integer page, Integer size, String direction, String sort);
 
     @IsAdminOrShopOwnerOrShopkeeper

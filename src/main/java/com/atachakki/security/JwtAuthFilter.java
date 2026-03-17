@@ -55,6 +55,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         try {
+            System.out.println("---next request---");
             log.debug("incoming request: {} {}", request.getMethod(), request.getRequestURI());
 
             long start = System.currentTimeMillis();

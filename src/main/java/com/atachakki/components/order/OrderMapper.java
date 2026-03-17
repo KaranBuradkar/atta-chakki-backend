@@ -19,5 +19,6 @@ public interface OrderMapper {
     @Mapping(source = "addedBy.userDetail.name", target = "addedByName")
     @Mapping(source = "updatedBy.id", target = "updatedById")
     @Mapping(source = "updatedBy.userDetail.name", target = "updatedByName")
+    @Mapping(source = "customer.id", target = "customerId")
     OrderResponseDto toResponseDto(Order order);
 }

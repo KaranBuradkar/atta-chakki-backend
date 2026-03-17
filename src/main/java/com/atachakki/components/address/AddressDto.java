@@ -25,7 +25,7 @@ public class AddressDto {
     private String country;
 
     @NotBlank(message = "postal code is never be null")
-    @JsonProperty(value = "postal_code") private String postalCode;
+    private String postalCode;
 
     private LocalDateTime updatedAt;
 

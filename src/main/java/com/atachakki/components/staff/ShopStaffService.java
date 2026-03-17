@@ -10,17 +10,17 @@ import org.springframework.stereotype.Service;
 public interface ShopStaffService {
 
     @PreAuthorize(value = "@permissionGuard.check(#shopId, 'STAFF', 'READ')")
-    Page<ShopStaffResponseDto> findShopStaffs(
+    Page<StaffResponseDto> findShopStaffs(
             Long shopId, Integer page, Integer size, String direction, String sort);
 
     @PreAuthorize(value = "@permissionGuard.check(#shopId, 'STAFF', 'READ')")
-    ShopStaffResponseDto findShopStaff(Long shopId, Long shopStaffId);
+    StaffResponseDto findShopStaff(Long shopId, Long shopStaffId);
 
     @IsAdminOrShopOwnerOrShopkeeper
-    ShopStaffResponseDto create(Long shopId, @Valid ShopStaffRequestDto requestDto);
+    StaffResponseDto create(Long shopId, @Valid StaffRequestDto requestDto);
 
     @IsAdminOrShopOwnerOrShopkeeper
-    ShopStaffResponseDto update(Long shopId, Long shopStaffId, @Valid ShopStaffRequestDto requestDto);
+    StaffResponseDto update(Long shopId, Long shopStaffId, @Valid StaffRequestDto requestDto);
 
     @IsAdminOrShopOwnerOrShopkeeper
     void deleteById(Long shopId, Long shopStaffId);

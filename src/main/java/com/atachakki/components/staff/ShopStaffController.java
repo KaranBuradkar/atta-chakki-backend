@@ -35,7 +35,7 @@ public class ShopStaffController extends BaseController {
             description = "Retrieve paginated list of staffs belonging to a shop"
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ShopStaffResponseDto>>> fetchShopStaffs(
+    public ResponseEntity<ApiResponse<Page<StaffResponseDto>>> fetchShopStaffs(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable Long shopId,
 
@@ -51,7 +51,7 @@ public class ShopStaffController extends BaseController {
             @Parameter(description = "Sort field", example = "createdAt")
             @RequestParam(defaultValue = "createdAt") String sort
     ) {
-        Page<ShopStaffResponseDto> responsePage =
+        Page<StaffResponseDto> responsePage =
                 shopStaffService.findShopStaffs(shopId, page, size, direction, sort);
 
         return apiResponse(HttpStatus.OK, "Shop staffs fetched successfully", responsePage);
@@ -62,14 +62,14 @@ public class ShopStaffController extends BaseController {
             description = "Retrieve a single shop staff by staff ID"
     )
     @GetMapping("/{shopStaffId}")
-    public ResponseEntity<ApiResponse<ShopStaffResponseDto>> fetchShopStaff(
+    public ResponseEntity<ApiResponse<StaffResponseDto>> fetchShopStaff(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable Long shopId,
 
             @Parameter(description = "Shop Staff ID", required = true)
             @PathVariable Long shopStaffId
     ) {
-        ShopStaffResponseDto responseDto =
+        StaffResponseDto responseDto =
                 shopStaffService.findShopStaff(shopId, shopStaffId);
 
         return apiResponse(HttpStatus.OK, "Shop staff fetched successfully", responseDto);
@@ -80,13 +80,13 @@ public class ShopStaffController extends BaseController {
             description = "Register a new staff member for a shop"
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<ShopStaffResponseDto>> createShopStaff(
+    public ResponseEntity<ApiResponse<StaffResponseDto>> createShopStaff(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable Long shopId,
 
-            @Valid @RequestBody ShopStaffRequestDto requestDto
+            @Valid @RequestBody StaffRequestDto requestDto
     ) {
-        ShopStaffResponseDto responseDto =
+        StaffResponseDto responseDto =
                 shopStaffService.create(shopId, requestDto);
 
         return apiResponse(HttpStatus.CREATED, "New shop staff registered successfully", responseDto);
@@ -97,16 +97,16 @@ public class ShopStaffController extends BaseController {
             description = "Update details of an existing shop staff"
     )
     @PatchMapping("/{shopStaffId}")
-    public ResponseEntity<ApiResponse<ShopStaffResponseDto>> updateShopStaff(
+    public ResponseEntity<ApiResponse<StaffResponseDto>> updateShopStaff(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable Long shopId,
 
             @Parameter(description = "Shop Staff ID", required = true)
             @PathVariable Long shopStaffId,
 
-            @RequestBody ShopStaffRequestDto requestDto
+            @RequestBody StaffRequestDto requestDto
     ) {
-        ShopStaffResponseDto responseDto =
+        StaffResponseDto responseDto =
                 shopStaffService.update(shopId, shopStaffId, requestDto);
 
         return apiResponse(HttpStatus.OK, "Shop staff updated successfully", responseDto);

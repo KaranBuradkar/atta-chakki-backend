@@ -79,7 +79,35 @@ public class StaffPermissionController extends BaseController {
                         shopId, staffId, page, size, direction, sort
                 );
 
-        return apiResponse(HttpStatus.FOUND, "Permissions fetched successfully", responsePage);
+        return apiResponse(HttpStatus.OK, "Permissions fetched successfully", responsePage);
+    }
+
+    @GetMapping("/staffs/{staffId}/bunch")
+    public ResponseEntity<ApiResponse<Page<PermissionResponseDto>>> getPermissions(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Staff ID", example = "20", required = true)
+            @PathVariable Long staffId,
+
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") Integer page,
+
+            @Parameter(description = "Page size", example = "10")
+            @RequestParam(defaultValue = "10") Integer size,
+
+            @Parameter(description = "Sort direction (asc / desc)", example = "asc")
+            @RequestParam(defaultValue = "asc") String direction,
+
+            @Parameter(
+                    description = "Sort fields",
+                    example = "module"
+            )
+            @RequestParam(defaultValue = "module") String[] sort
+    ) {
+        Page<PermissionResponseDto> permissions = staffPermissionService
+                .findPermissions(shopId, staffId, page, size, direction, sort);
+        return apiResponse(HttpStatus.OK, "Permissions fetched successfully", permissions);
     }
 
     @Operation(

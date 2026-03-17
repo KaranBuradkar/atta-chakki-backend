@@ -28,7 +28,6 @@ public class ShopOperationServiceImpl implements ShopOperationService {
 
     private static final Logger log = LoggerFactory.getLogger(ShopOperationServiceImpl.class);
 
-    private final ObjectMapper mapper = new ObjectMapper();
     private final ShopOperationRepository shopOperationRepository;
     private final ShopOperationMapper shopOperationMapper;
     private final ShopRepository shopRepository;

@@ -1,8 +1,10 @@
 package com.atachakki.repository;
 
+import com.atachakki.components.permissions.PermissionResponseDto;
 import com.atachakki.components.permissions.StaffPermission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,4 +43,35 @@ public interface StaffPermissionRepository extends JpaRepository<StaffPermission
     Optional<StaffPermission> findByIdAndShopStaffShopId(Long permissionId, Long shopId);
 
     List<StaffPermission> findByShopStaffIdAndShopStaffShopId(Long staffId, Long shopId);
+
+//    @Query("""
+//            SELECT new com.atachakki.components.permissions.PermissionResponseDto(
+//                sp.id,
+//                sp.shopStaff.id,
+//                sp.module,
+//                CASE WHEN sp.level = com.atachakki.entity.type.PermissionLevel.READ
+//                     OR sp.level = com.atachakki.entity.type.PermissionLevel.WRITE
+//                     OR sp.level = com.atachakki.entity.type.PermissionLevel.UPDATE
+//                     OR sp.level = com.atachakki.entity.type.PermissionLevel.DELETE
+//                     THEN true ELSE false END,
+//
+//                CASE WHEN sp.level = com.atachakki.entity.type.PermissionLevel.WRITE
+//                     OR sp.level = com.atachakki.entity.type.PermissionLevel.UPDATE
+//                     OR sp.level = com.atachakki.entity.type.PermissionLevel.DELETE
+//                     THEN true ELSE false END,
+//
+//                CASE WHEN sp.level = com.atachakki.entity.type.PermissionLevel.UPDATE
+//                     OR sp.level = com.atachakki.entity.type.PermissionLevel.DELETE
+//                     THEN true ELSE false END,
+//
+//                CASE WHEN sp.level = com.atachakki.entity.type.PermissionLevel.DELETE
+//                     THEN true ELSE false END
+//            )
+//            FROM StaffPermission sp
+//            WHERE sp.shopStaff.id = :staffId
+//            """)
+//    Page<PermissionResponseDto> findPermissionsByStaffId(
+//            Long staffId,
+//            Pageable pageable
+//    );
 }

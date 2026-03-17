@@ -79,7 +79,28 @@ public class OrderController extends BaseController {
         Page<OrderResponseDto> orderPage =
                 orderService.findOrders(shopId, customerId, page, size, direction, sort);
 
-        return apiResponse(HttpStatus.FOUND, "Orders fetched successfully", orderPage);
+        return apiResponse(HttpStatus.OK, "Orders fetched successfully", orderPage);
+    }
+
+    @Operation(
+            summary = "Get total outstanding amount",
+            description = "Returns total pending debt for a shop",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Total debt fetched",
+                            content = @Content(schema = @Schema(implementation = BigDecimal.class))
+                    )
+            }
+    )
+    @GetMapping("/customers/{customerId}/balance")
+    public ResponseEntity<ApiResponse<String>> getTotal(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+            @PathVariable Long customerId
+    ) {
+        String totalBalance = orderService.findTotalCustomerBalance(shopId, customerId);
+        return apiResponse(HttpStatus.OK, "Total Balance of customer fetched", totalBalance);
     }
 
     @Operation(

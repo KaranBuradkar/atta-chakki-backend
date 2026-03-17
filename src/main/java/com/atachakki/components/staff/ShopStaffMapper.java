@@ -1,6 +1,5 @@
 package com.atachakki.components.staff;
 
-import com.atachakki.components.shop.Shop;
 import com.atachakki.components.shop.ShopShortResponseDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -12,13 +11,13 @@ import org.mapstruct.ReportingPolicy;
 )
 public interface ShopStaffMapper {
 
-    ShopStaff toEntity(ShopStaffRequestDto requestDto);
+    ShopStaff toEntity(StaffRequestDto requestDto);
 
     @Mapping(source = "shop.name", target = "shopName")
     @Mapping(source = "userDetail.user.username", target = "username")
     @Mapping(source = "userDetail.name", target = "staffName")
     @Mapping(source = "addedBy.name", target = "addedByName")
-    ShopStaffResponseDto toResponseDto(ShopStaff shopStaff);
+    StaffResponseDto toResponseDto(ShopStaff shopStaff);
 
     @Mapping(target = "id", source = "shop.id")
     @Mapping(target = "name", source = "shop.name")

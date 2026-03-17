@@ -1,4 +1,4 @@
-package com.atachakki.components.due.or.refund;
+package com.atachakki.components.customerLedger;
 
 import com.atachakki.components.customer.Customer;
 import com.atachakki.components.staff.ShopStaff;
@@ -7,42 +7,40 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "dues_and_refunds")
-public class DueOrRefund {
+@Table(name = "customer_ledger")
+public class CustomerLedger {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private DueRefundType type;
+    private CustomerLedgerType type;
 
     @Column(name = "amount", nullable = false, scale = 2)
     private BigDecimal amount;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private DueRefundStatus status;
+    private CustomerLedgerStatus status;
 
     @Column(name = "date", nullable = false, updatable = false)
-    private LocalDate date;
+    private Long date;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Long createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Long updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "added_by_id", updatable = false, nullable = false)
@@ -52,7 +50,21 @@ public class DueOrRefund {
     @JoinColumn(name = "updated_by_id")
     private ShopStaff updatedBy;
 
-    public DueOrRefund() {}
+    public CustomerLedger() {
+    }
+
+    public CustomerLedger(
+            Customer customer, CustomerLedgerType type, BigDecimal amount,
+            CustomerLedgerStatus status, Long date,
+            ShopStaff addedBy, ShopStaff updatedBy) {
+        this.customer = customer;
+        this.type = type;
+        this.amount = amount;
+        this.status = status;
+        this.date = date;
+        this.addedBy = addedBy;
+        this.updatedBy = updatedBy;
+    }
 
     public Long getId() {
         return id;
@@ -70,27 +82,27 @@ public class DueOrRefund {
         this.customer = customer;
     }
 
-    public DueRefundType getType() {
+    public CustomerLedgerType getType() {
         return type;
     }
 
-    public void setType(DueRefundType type) {
+    public void setType(CustomerLedgerType type) {
         this.type = type;
     }
 
-    public DueRefundStatus getStatus() {
+    public CustomerLedgerStatus getStatus() {
         return status;
     }
 
-    public void setStatus(DueRefundStatus status) {
+    public void setStatus(CustomerLedgerStatus status) {
         this.status = status;
     }
 
-    public LocalDate getDate() {
+    public Long getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(Long date) {
         this.date = date;
     }
 
@@ -102,20 +114,20 @@ public class DueOrRefund {
         this.amount = amount;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Long getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public void setUpdatedAt(Long updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public Long getUpdatedAt() {
+        return updatedAt;
     }
 
     public ShopStaff getAddedBy() {
