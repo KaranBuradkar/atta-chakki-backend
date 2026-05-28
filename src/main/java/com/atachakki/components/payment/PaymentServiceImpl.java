@@ -10,6 +10,8 @@ import com.atachakki.components.staff.ShopStaff;
 import com.atachakki.entity.User;
 import com.atachakki.entity.type.Module;
 import com.atachakki.entity.type.PaymentStatus;
+import com.atachakki.exception.businessLogic.BusinessLogicException;
+import com.atachakki.exception.businessLogic.CustomerIsBlockedException;
 import com.atachakki.exception.entityNotFound.*;
 import com.atachakki.exception.validation.PaymentValidationFailed;
 import com.atachakki.repository.ShopStaffRepository;
@@ -81,6 +83,11 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    public List<Long> findPaymentIds(Long shopId, Long customerId) {
+        return paymentRepository.findIdsByCustomerId(customerId);
+    }
+
+    @Override
     @Transactional
     public PaymentResponseDto create(Long shopId, Long customerId, PaymentBundleRequestDto requestDto) {
 
@@ -93,6 +100,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         ShopStaff staff = getCurrentStaff(shopId);
         Customer customer = fetchCustomer(customerId, shopId);
+        if (customer.getBlock()) {
+            log.warn("Customer is blocked");
+            throw new CustomerIsBlockedException(customerId);
+        }
 
         Payment entity = paymentMapper.toEntity(pay);
         entity.setReceiver(staff);
@@ -105,7 +116,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         if (customerLedgerRequestDto != null) {
             CustomerLedger customerLedger = customerLedgerMapper.toEntity(customerLedgerRequestDto);
-            customerLedger.setCustomer(customer);
             customerLedger.setAddedBy(staff);
             customerLedgerRepository.save(customerLedger);
         }
@@ -116,18 +126,175 @@ public class PaymentServiceImpl implements PaymentService {
         return responseDto;
     }
 
+    @Transactional
+    public PaymentResponseDto payOrders(Long shopId, Long customerId, PaymentBundleRequestDto bundle) {
+
+        ShopStaff staff = getCurrentStaff(shopId);
+        Customer customer = fetchCustomer(customerId, shopId);
+
+        // 1. fetch bundle
+        List<Long> orderIds = bundle.getOrderIds();
+        PaymentRequestDto paymentRequest = bundle.getPaymentRequestDto();
+        CustomerLedgerRequestDto clRequest = bundle.getDueOrRefundRequestDto();
+        CustomerLedgerRequestDto finalCLRequest = bundle.getFinalCustomerLedgerRequestDto();
+
+        // 2. fetch order by Ids
+        Page<Order> orderPage = getOrderPage(orderIds, customerId, shopId);
+
+        BigDecimal totalOrderAmount = orderPage.stream()
+                .map(Order::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        boolean isDueReqCL = clRequest.type().name().equalsIgnoreCase(CustomerLedgerType.DUE.name());
+        BigDecimal payAmtSumTOdrAmt = isDueReqCL
+                ? paymentRequest.amount().add(clRequest.amount())
+                : paymentRequest.amount().subtract(clRequest.amount());
+        // must match total amount of orders from request and db order's amount sum
+        if (payAmtSumTOdrAmt.compareTo(totalOrderAmount) != 0) {
+            log.debug("Order Total Amt != payAmt + newDueAmt");
+            throw new BusinessLogicException("Order Total Amt != payAmt + newDueAmt", "Check due pay calculation");
+        }
+
+        CustomerLedger customerLedger = getCustomerLedger(shopId, customerId);
+        boolean isDueDbCL = customerLedger.getType().name().equalsIgnoreCase(CustomerLedgerType.DUE.name());
+
+        // DUE Request
+        if (isDueReqCL) {
+            if (totalOrderAmount.compareTo(paymentRequest.amount().add(clRequest.amount())) != 0) {
+                log.debug("TotalAmount - DueAmount != payAmount");
+                throw new BusinessLogicException("Calculation error", "TotalAmount - DueAmount != payAmount");
+            }
+
+            if (isDueDbCL) {
+                BigDecimal finalDue = customerLedger.getAmount().add(clRequest.amount());
+                if (finalDue.compareTo(finalCLRequest.amount()) != 0) {
+                    log.debug("oldDue + newDue != finalDue");
+                    throw new BusinessLogicException("Order Total Amt != payAmt + newDueAmt", "Check due pay calculation");
+                }
+                customerLedger.setAmount(finalDue);
+                customerLedger.setType(CustomerLedgerType.DUE);
+            } else {
+                BigDecimal finalAmount;
+                CustomerLedgerType finalType;
+
+                // here db customerLedger is Refund
+                int compare = customerLedger.getAmount().compareTo(clRequest.amount());
+
+                if (compare > 0) {
+                    // Overpayment → becomes REFUND
+                    finalAmount = customerLedger.getAmount().subtract(clRequest.amount());
+                    finalType = CustomerLedgerType.REFUND;
+                } else if (compare < 0) {
+                    // Partial payment → still DUE
+                    finalAmount = clRequest.amount().subtract(customerLedger.getAmount());
+                    finalType = CustomerLedgerType.DUE;
+
+                } else {
+                    // Exact payment → zero
+                    finalAmount = BigDecimal.ZERO;
+                    finalType = CustomerLedgerType.DUE; // or keep previous
+                }
+
+                if (finalAmount.compareTo(finalCLRequest.amount()) != 0 ||
+                        !finalType.name().equalsIgnoreCase(finalCLRequest.type().name())) {
+                    log.debug("oldDue + newDue != finalDue");
+                    throw new BusinessLogicException("Order Total Amt != payAmt + newDueAmt", "Check due pay calculation");
+                }
+                customerLedger.setAmount(finalAmount);
+                customerLedger.setType(finalType);
+            }
+        }
+        // Refund Request
+        else {
+            if (totalOrderAmount.compareTo(paymentRequest.amount().subtract(clRequest.amount())) != 0) {
+                log.debug("TotalAmount + DueAmount != payAmount");
+                throw new BusinessLogicException("Calculation error", "TotalAmount + DueAmount != payAmount");
+            }
+
+            if (isDueDbCL) {
+                BigDecimal finalAmount;
+                CustomerLedgerType finalType;
+
+                // here db customerLedger is Due
+                int compare = customerLedger.getAmount().compareTo(clRequest.amount());
+
+                if (compare < 0) {
+                    // Overpayment → becomes REFUND
+                    finalAmount = clRequest.amount().subtract(customerLedger.getAmount());
+                    finalType = CustomerLedgerType.REFUND;
+                } else if (compare > 0) {
+                    // Partial payment → still DUE
+                    finalAmount = customerLedger.getAmount().subtract(clRequest.amount());
+                    finalType = CustomerLedgerType.DUE;
+
+                } else {
+                    // Exact payment → zero
+                    finalAmount = BigDecimal.ZERO;
+                    finalType = CustomerLedgerType.DUE; // or keep previous
+                }
+
+                if (finalAmount.compareTo(finalCLRequest.amount()) != 0 ||
+                        !finalType.name().equalsIgnoreCase(finalCLRequest.type().name())) {
+                    log.debug("oldDue + newDue != finalDue");
+                    throw new BusinessLogicException("Order Total Amt != payAmt + newDueAmt", "Check due pay calculation");
+                }
+                customerLedger.setAmount(finalAmount);
+                customerLedger.setType(finalType);
+            } else {
+                BigDecimal finalRefund = customerLedger.getAmount().add(clRequest.amount());
+                if (finalRefund.compareTo(finalCLRequest.amount()) != 0 ||
+                !finalCLRequest.type().name().equalsIgnoreCase(CustomerLedgerType.REFUND.name())) {
+                    log.debug("oldDue + newDue != finalDue");
+                    throw new BusinessLogicException("Order Total Amt != payAmt + newDueAmt", "Check due pay calculation");
+                }
+                customerLedger.setAmount(finalRefund);
+                customerLedger.setType(CustomerLedgerType.REFUND);
+            }
+        }
+
+        orderPage.stream().forEach(o -> o.setPaymentStatus(PaymentStatus.PAID));
+        orderRepository.saveAll(orderPage);
+        customerLedgerRepository.save(customerLedger);
+
+        Payment entity = paymentMapper.toEntity(paymentRequest);
+        entity.setReceiver(staff);
+        entity.setCustomer(customer);
+        Payment savePayment = paymentRepository.save(entity);
+
+        return paymentMapper.toResponseDto(savePayment);
+    }
+
+    private Page<Order> getOrderPage(List<Long> orderIds, Long customerId, Long shopId) {
+        PageRequest pageRequest = PageRequest.of(0,
+                orderIds.size(), Sort.Direction.ASC, "orderDate");
+
+        Page<Order> orders = orderRepository.findAllByIdInAndCustomerIdAndPaymentStatusAndCustomerShopId(
+                orderIds, customerId, PaymentStatus.PENDING, shopId, pageRequest
+        );
+        if (orderIds.size() != orders.getSize()) {
+            log.debug("OrderIds and PENDING orders mismatched");
+            throw new BusinessLogicException("OrderIds and PENDING orders mismatched", orderIds);
+        }
+
+        return orders;
+    }
+
     @Override
     @Transactional
     public PaymentResponseDto createByAmount(Long shopId, Long customerId, PaymentRequestDto requestDto) {
 
         ShopStaff staff = getCurrentStaff(shopId);
         Customer customer = fetchCustomer(customerId, shopId);
+        if (customer.getBlock()) {
+            log.warn("Customer is blocked");
+            throw new CustomerIsBlockedException(customerId);
+        }
 
         Payment entity = paymentMapper.toEntity(requestDto);
         entity.setReceiver(staff);
         entity.setCustomer(customer);
 
-        CustomerLedger customerLedger = getDueOrRefund(shopId, customerId);
+        CustomerLedger customerLedger = getCustomerLedger(shopId, customerId);
 
         BigDecimal currentAmount = customerLedger.getAmount()
                 .setScale(2, RoundingMode.HALF_UP);
@@ -168,7 +335,7 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toResponseDto(newPayment);
     }
 
-    private CustomerLedger getDueOrRefund(Long shopId, Long customerId) {
+    private CustomerLedger getCustomerLedger(Long shopId, Long customerId) {
         return customerLedgerRepository.findByCustomerId(customerId)
                 .orElseThrow(() -> {
                     log.debug("Customer's dueRefund not found customerId-{} in shopId-{}", customerId, shopId);

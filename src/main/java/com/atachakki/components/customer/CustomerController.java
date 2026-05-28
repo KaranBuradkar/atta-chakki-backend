@@ -1,5 +1,9 @@
 package com.atachakki.components.customer;
 
+import com.atachakki.components.order.OrderResponseDto;
+import com.atachakki.components.order.OrderService;
+import com.atachakki.components.payment.PaymentResponseDto;
+import com.atachakki.components.payment.PaymentService;
 import com.atachakki.controller.BaseController;
 import com.atachakki.dto.ApiResponse;
 import com.atachakki.entity.type.ExportType;
@@ -12,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -27,16 +33,23 @@ import java.util.List;
 @RequestMapping("/v1/shops/{shopId}/customers")
 public class CustomerController extends BaseController {
 
+    public static final Logger log = LoggerFactory.getLogger(CustomerController.class);
     private final CustomerService customerService;
+    private final OrderService orderService;
+    private final PaymentService paymentService;
     private final ExportService exportService;
 
     protected CustomerController(
             HttpServletRequest request,
             CustomerService customerService,
+            OrderService orderService,
+            PaymentService paymentService,
             ExportService exportService
     ) {
         super(request);
         this.customerService = customerService;
+        this.orderService = orderService;
+        this.paymentService = paymentService;
         this.exportService = exportService;
     }
 
@@ -60,9 +73,30 @@ public class CustomerController extends BaseController {
             @RequestParam(value = "sort", defaultValue = "name") String sort,
             @RequestParam(required = false) String name
     ) {
+        log.info("Received request: {} at {}",request.getMethod(), request.getRequestURI());
         Page<CustomerResponseShortDto> response = customerService
                 .findCustomers(shopId, page, size, direction, sort, name);
+        log.info("Complete Request: {} at {}", request.getMethod(), request.getRequestURI());
         return apiResponse(HttpStatus.OK, "Customers fetched successfully", response);
+    }
+
+    @ApiResponses(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Long.class)
+                    )
+            )
+    )
+    @Operation(summary = "Get customerIds", description = "Fetch customerIds details by shopId")
+    @GetMapping(value = "/ids")
+    public ResponseEntity<ApiResponse<List<Long>>> getCustomerIds(
+            @Parameter(description = "Shop ID", required = true)
+            @PathVariable(value = "shopId") Long shopId
+    ) {
+        List<Long> customerIds = customerService.findCustomerIds(shopId);
+        return apiResponse(HttpStatus.OK, "", customerIds);
     }
 
     @ApiResponses(
@@ -117,7 +151,7 @@ public class CustomerController extends BaseController {
     )
     @Operation(summary = "Create customer", description = "Register a new customer for a shop")
     @PostMapping("/all")
-    public ResponseEntity<ApiResponse<List<CustomerResponseDto>>> createCustomer(
+    public ResponseEntity<ApiResponse<List<CustomerResponseDto>>> createAll(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable("shopId") Long shopId,
             @Valid @RequestBody List<CustomerRequestDto> requestDto
@@ -165,11 +199,11 @@ public class CustomerController extends BaseController {
             @PathVariable(value = "shopId") Long shopId,
             @Parameter(description = "Customer ID", required = true)
             @PathVariable(value = "customerId") Long customerId,
-            @RequestParam(value = "blocked") Boolean blocked
+            @RequestBody Boolean block
     ) {
         CustomerResponseDto responseDto = customerService
-                .updateCustomerBlockStatus(shopId, customerId, blocked);
-        return apiResponse(HttpStatus.OK, blocked ? "Customer blocked" : "Customer unblocked", responseDto);
+                .updateCustomerBlockStatus(shopId, customerId, block);
+        return apiResponse(HttpStatus.OK, block ? "Customer blocked" : "Customer unblocked", responseDto);
     }
 
     @ApiResponses(
@@ -177,7 +211,7 @@ public class CustomerController extends BaseController {
     )
     @Operation(summary = "Delete customer", description = "Delete customer by customerId")
     @DeleteMapping("/{customerId}")
-    public ResponseEntity<ApiResponse<CustomerResponseDto>> deleteCustomer(
+    public ResponseEntity<ApiResponse<Void>> deleteById(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable(value = "shopId") Long shopId,
             @Parameter(description = "Customer ID", required = true)
@@ -200,15 +234,57 @@ public class CustomerController extends BaseController {
                 .findAllCustomers(shopId, 0, 200, "asc", "name");
         HttpHeaders headers = new HttpHeaders();
         ByteArrayInputStream in = null;
+        String fileName = "customers." + exportType.name().toLowerCase();
 
         if (ExportType.CSV.equals(exportType)) {
             in = exportService.exportCustomersToCsv(customers);
-            headers.add("Content-Disposition", "attachment; filename=customers.csv");
+            headers.add("Content-Disposition", "attachment; filename="+fileName);
             headers.add("Content-Type", "text/csv");
         }
 
         if (ExportType.PDF.equals(exportType)) {
+            headers.add("Content-Disposition", "attachment; filename="+fileName);
+            headers.add("Content-Type", "application/pdf");
             in = exportService.exportCustomersToPdf(customers);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .headers(headers)
+                .body(new InputStreamResource(in));
+    }
+
+    @Operation(summary = "Export customer details", description = "Export customer details as CSV or PDF")
+    @GetMapping("/{customerId}/export")
+    public ResponseEntity<InputStreamResource> exportCustomerDetails(
+            @Parameter(description = "Shop ID", required = true)
+            @PathVariable Long shopId,
+            @Parameter(description = "Customer ID", required = true)
+            @PathVariable Long customerId,
+            @Parameter(description = "Export type", required = true)
+            @RequestParam("exportType") ExportType exportType
+    ) {
+
+        CustomerResponseDto customer = customerService.findCustomer(shopId, customerId);
+        Page<OrderResponseDto> orders = orderService.findOrders(shopId, customerId,
+                0, 200, "asc", "orderDate");
+        Page<PaymentResponseDto> payments = paymentService.findPayments(shopId, customerId,
+                0, 200, "ASC", "paymentDate");
+
+
+        HttpHeaders headers = new HttpHeaders();
+        ByteArrayInputStream in = null;
+        String fileName = "customers." + exportType.name().toLowerCase();
+
+        if (ExportType.CSV.equals(exportType)) {
+            in = exportService.exportCustomerDetailsToCsv(customer, orders, payments);
+            headers.add("Content-Disposition", "attachment; filename="+fileName);
+            headers.add("Content-Type", "text/csv");
+        }
+
+        if (ExportType.PDF.equals(exportType)) {
+            headers.add("Content-Disposition", "attachment; filename="+fileName);
+            headers.add("Content-Type", "application/pdf");
+            in = exportService.exportCustomerDetailsToPdf(customer, orders, payments);
         }
 
         return ResponseEntity.status(HttpStatus.OK)

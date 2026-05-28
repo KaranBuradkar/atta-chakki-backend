@@ -155,14 +155,40 @@ public class StaffPermissionController extends BaseController {
             }
     )
     @DeleteMapping("/{permissionId}")
-    public ResponseEntity<ApiResponse<Void>> deletePermissions(
+    public ResponseEntity<ApiResponse<Void>> deletePermission(
             @Parameter(description = "Shop ID", example = "1", required = true)
             @PathVariable Long shopId,
 
             @Parameter(description = "Permission ID", example = "50", required = true)
             @PathVariable Long permissionId
     ) {
-        staffPermissionService.delete(shopId, permissionId);
+        staffPermissionService.delete(shopId, List.of(permissionId));
         return apiResponse(HttpStatus.OK, "Permission deleted successfully", null);
+    }
+
+    @Operation(
+            summary = "Revoke staff permissions",
+            description = "Delete multiple permissions assigned to a staff member",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Permissions deleted successfully"
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "Permission not found"
+                    )
+            }
+    )
+    @PutMapping("/permissions")
+    public ResponseEntity<ApiResponse<Void>> deletePermissions(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Permission IDs", example = "[51, 24]", required = true)
+            @RequestBody List<Long> permissionIds
+    ) {
+        staffPermissionService.delete(shopId, permissionIds);
+        return apiResponse(HttpStatus.OK, "Permissions deleted successfully", null);
     }
 }

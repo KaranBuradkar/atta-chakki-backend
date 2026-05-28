@@ -24,5 +24,5 @@ public interface StaffPermissionService {
             Long shopId, Long staffId, @Valid List<StaffPermissionRequestDto> requestDto);
 
     @PreAuthorize(value = "@permissionGuard.check(#shopId, 'STAFF_PERMISSION', 'DELETE')")
-    void delete(Long shopId, Long permissionId);
+    void delete(Long shopId, List<Long> permissionIds);
 }

@@ -2,12 +2,16 @@ package com.atachakki.components.order;
 
 import com.atachakki.components.customer.Customer;
 import com.atachakki.components.customer.CustomerRepository;
+import com.atachakki.components.customerLedger.CustomerLedger;
+import com.atachakki.components.customerLedger.CustomerLedgerRepository;
+import com.atachakki.components.customerLedger.CustomerLedgerType;
 import com.atachakki.components.operation.ShopOperationService;
 import com.atachakki.components.pricing.ShopOrderItemPrice;
 import com.atachakki.components.pricing.ShopOrderItemPriceRepository;
 import com.atachakki.components.staff.ShopStaff;
 import com.atachakki.entity.User;
 import com.atachakki.entity.type.Module;
+import com.atachakki.entity.type.PaymentStatus;
 import com.atachakki.exception.businessLogic.BusinessLogicException;
 import com.atachakki.exception.businessLogic.CustomerIsBlockedException;
 import com.atachakki.exception.entityNotFound.*;
@@ -24,9 +28,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
-public class OrderServiceImpl implements OrderService{
+public class OrderServiceImpl implements OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
     private final OrderRepository orderRepository;
@@ -35,6 +43,7 @@ public class OrderServiceImpl implements OrderService{
     private final ShopStaffRepository shopStaffRepository;
     private final ShopOrderItemPriceRepository shopOrderItemPriceRepository;
     private final ShopOperationService shopOperationService;
+    private final CustomerLedgerRepository customerLedgerRepository;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -42,14 +51,15 @@ public class OrderServiceImpl implements OrderService{
             CustomerRepository customerRepository,
             ShopStaffRepository shopStaffRepository,
             ShopOrderItemPriceRepository shopOrderItemPriceRepository,
-            ShopOperationService shopOperationService
-    ) {
+            ShopOperationService shopOperationService,
+            CustomerLedgerRepository customerLedgerRepository) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.customerRepository = customerRepository;
         this.shopStaffRepository = shopStaffRepository;
         this.shopOrderItemPriceRepository = shopOrderItemPriceRepository;
         this.shopOperationService = shopOperationService;
+        this.customerLedgerRepository = customerLedgerRepository;
     }
 
     @Override
@@ -58,14 +68,19 @@ public class OrderServiceImpl implements OrderService{
             Integer size, String direction, String sort
     ) {
         customerRepository.findByIdAndShopId(customerId, shopId).orElseThrow(() -> {
-                    log.warn("customer is not belong to shop");
-                    return new CustomerBelongToShopException("customer is not belong to shop");
-                });
+            log.warn("customer is not belong to shop");
+            return new CustomerBelongToShopException("customer is not belong to shop");
+        });
 
         Sort.Direction dir = ("asc".equalsIgnoreCase(direction)) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Page<Order> orderPage = orderRepository
                 .findByCustomerId(customerId, PageRequest.of(page, size, dir, sort));
         return orderPage.map(orderMapper::toResponseDto);
+    }
+
+    @Override
+    public List<Long> findOrderIds(Long shopId, Long customerId) {
+        return orderRepository.findIdsByCustomerId(customerId);
     }
 
     @Override
@@ -97,8 +112,40 @@ public class OrderServiceImpl implements OrderService{
         // db operation and response creation
         Order newOrder = orderRepository.save(entity);
         OrderResponseDto responseDto = orderMapper.toResponseDto(newOrder);
-        shopOperationService.createModule(shopId, newOrder.getAddedBy().getId(), Module.ORDER, responseDto.id(), orderToString(responseDto));
+        shopOperationService.createModule(shopId, newOrder.getAddedBy().getId(),
+                Module.ORDER, responseDto.id(), orderToString(responseDto));
         return responseDto;
+    }
+
+    @Override
+    @Transactional
+    public List<OrderResponseDto> createAllOrders(Long shopId, Long customerId, List<OrderRequestDto> orderRequests) {
+        // validations
+        Customer customer = fetchCustomer(customerId, shopId);
+        if (customer.getBlock()) {
+            log.warn("Customer is blocked");
+            throw new CustomerIsBlockedException(customerId);
+        }
+        ShopStaff staff = getCurrentStaff(shopId);
+        List<Order> newOrders = new ArrayList<>();
+
+        for (OrderRequestDto requestDto : orderRequests) {
+            ShopOrderItemPrice shopOrderItemPrice = fetchShopOrderItemPrice(shopId, requestDto);
+            validateTotalAmount(shopOrderItemPrice, requestDto);
+
+            // entity creation
+            Order entity = orderMapper.toEntity(requestDto);
+            entity.setDeleted(false);
+            entity.setCustomer(customer);
+            entity.setAddedBy(staff);
+            entity.setShopOrderItemPrice(shopOrderItemPrice);
+            newOrders.add(entity);
+        }
+        List<Order> orders = orderRepository.saveAll(newOrders);
+        List<OrderResponseDto> responses = orders.stream().map(orderMapper::toResponseDto).toList();
+        responses.forEach(r -> shopOperationService.createModule(
+                shopId, r.addedById(), Module.ORDER, r.id(), orderToString(r)));
+        return responses;
     }
 
     @Override
@@ -144,7 +191,7 @@ public class OrderServiceImpl implements OrderService{
         return responseDto;
     }
 
-    private <T>boolean validateInput(T request, T existing) {
+    private <T> boolean validateInput(T request, T existing) {
         return request != null && !existing.equals(request);
     }
 
@@ -166,7 +213,66 @@ public class OrderServiceImpl implements OrderService{
         return orderRepository.findTotalDebt(shopId);
     }
 
+    @Override
+    public List<OrderResponseDto> crossOrders(Long shopId, Long customerId,
+                                              CrossOrdersRequestDto request) {
+        List<Order> orders = orderRepository.findAllById(request.orderIds());
+        if (orders.size() != request.orderIds().size()) {
+            log.error("Mismatched orderIds size");
+            throw new BusinessLogicException("Mismatched orders", null);
+        }
+        BigDecimal amount = new BigDecimal(request.totalAmount());
+        BigDecimal total = orders.stream().map(Order::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (total.compareTo(amount) != 0) {
+            log.error("Mismatched total amount");
+            throw new BusinessLogicException("Mismatched total amount", null);
+        }
+
+        List<Order> list = orders.stream().filter(o -> !o.getPaymentStatus()
+                .equals(PaymentStatus.PENDING)).toList();
+        if (!list.isEmpty()) {
+            log.error("Some orders are not PENDING");
+            throw new BusinessLogicException("Some orders already PAID", null);
+        }
+
+        manageCustomerLedger(customerId, total);
+
+        orders.forEach(o -> o.setPaymentStatus(PaymentStatus.PAID));
+        List<Order> updated = orderRepository.saveAll(orders);
+
+        return updated.stream().map(orderMapper::toResponseDto).toList();
+    }
     // util methods
+
+    private void manageCustomerLedger(Long customerId, BigDecimal total) {
+
+        CustomerLedger customerLedger = customerLedgerRepository.findByCustomerId(customerId)
+                .orElseThrow(() -> new EntityNotFoundException("CustomerLedger not found",
+                        "CustomerLedger not found for CustomerId-" + customerId));
+        if (customerLedger.getType().equals(CustomerLedgerType.DUE)) {
+            BigDecimal finalAmount = customerLedger.getAmount().add(total);
+            customerLedger.setAmount(finalAmount);
+        } else if (customerLedger.getType().equals(CustomerLedgerType.REFUND)) {
+            int compare = customerLedger.getAmount().compareTo(total);
+            if (compare == 0) {
+                BigDecimal finalAmount = customerLedger.getAmount().subtract(total);
+                customerLedger.setAmount(finalAmount);
+            }
+
+            if (compare > 0) {
+                BigDecimal finalAmount = customerLedger.getAmount().subtract(total);
+                customerLedger.setAmount(finalAmount);
+            }
+
+            if (compare < 0) {
+                BigDecimal finalAmount = total.subtract(customerLedger.getAmount());
+                customerLedger.setAmount(finalAmount);
+                customerLedger.setType(CustomerLedgerType.DUE);
+            }
+        }
+    }
 
     private Customer fetchCustomer(Long customerId, Long shopId) {
         return customerRepository.findByIdAndShopId(customerId, shopId)
@@ -175,6 +281,7 @@ public class OrderServiceImpl implements OrderService{
                     return new CustomerBelongToShopException(customerId, shopId);
                 });
     }
+
     private void validateTotalAmount(ShopOrderItemPrice itemPrice, OrderRequestDto requestDto) {
         BigDecimal expectedPrice = itemPrice.getUnitPrice()
                 .multiply(BigDecimal.valueOf(requestDto.getQuantity())).setScale(2, RoundingMode.HALF_UP);
@@ -185,7 +292,7 @@ public class OrderServiceImpl implements OrderService{
             log.debug("Business logic failed: Expected total = {}, Provided = {}", expectedPrice, totalAmount);
             throw new BusinessLogicException(
                     "Total amount calculated incorrectly",
-                    "Expected total = "+expectedPrice+", Provided = "+totalAmount
+                    "Expected total = " + expectedPrice + ", Provided = " + totalAmount
             );
         }
     }

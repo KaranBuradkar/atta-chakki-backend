@@ -18,6 +18,13 @@ public interface CustomerService {
     @PreAuthorize("@permissionGuard.check(#shopId, 'CUSTOMER', 'READ')")
     CustomerResponseDto findCustomer(Long shopId, Long customerId);
 
+    @PreAuthorize("@permissionGuard.check(#shopId, 'CUSTOMER', 'READ')")
+    List<Long> findCustomerIds(Long shopId);
+
+    @PreAuthorize("@permissionGuard.isOwner(#shopId)")
+    Page<CustomerResponseDto> findAllCustomers(
+            Long shopId, Integer page, Integer size, String direction, String name);
+
     @PreAuthorize("@permissionGuard.check(#shopId, 'CUSTOMER', 'WRITE')")
     CustomerResponseDto create(Long shopId, CustomerRequestDto requestDto);
 
@@ -33,8 +40,4 @@ public interface CustomerService {
 
     @IsAdminOrShopOwnerOrShopkeeper
     void deleteById(Long shopId, Long customerId);
-
-    @IsAdminOrShopOwnerOrShopkeeper
-    Page<CustomerResponseDto> findAllCustomers(
-            Long shopId, int page, int size, String direction, String name);
 }

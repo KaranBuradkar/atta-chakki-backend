@@ -2,6 +2,7 @@ package com.atachakki.security.authorizationValidation;
 
 import com.atachakki.entity.type.Module;
 import com.atachakki.entity.type.PermissionLevel;
+import com.atachakki.entity.type.StaffRole;
 import com.atachakki.security.SecurityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,17 @@ public class PermissionGuard {
     public boolean check(Long shopId, Module module, PermissionLevel level) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return this.check(authentication, shopId, module, level);
+    }
+
+    public boolean isOwner(Long shopId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authorities = authentication.getAuthorities();
+        String required = AuthorityBuilder.owner(shopId);
+        if (authorities.stream().anyMatch(a -> a.getAuthority().equals(required))) {
+            log.debug("ACCESS GRANTED: '{}' as {}", authentication.getName(), AuthorityBuilder.owner(shopId));
+            return true;
+        } else log.debug("ACCESS DENIED: '{}' for {}", authentication.getName(), StaffRole.OWNER);
+        return false;
     }
 
     /**

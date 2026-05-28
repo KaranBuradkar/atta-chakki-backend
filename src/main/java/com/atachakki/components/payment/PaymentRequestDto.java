@@ -5,10 +5,20 @@ import com.atachakki.validation.PriceFormat;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record PaymentRequestDto(
-        @PriceFormat(message = "Invalid amount, It cannot be null, negative and more than 2 decimal places")
+        @PriceFormat()
         BigDecimal amount,
         @NotNull(message = "Payment mode is required") PaymentMode mode,
-        @NotNull(message = "Payment mode is required") PaymentStatus status
-) {}
+        @NotNull(message = "Payment status is required") PaymentStatus status,
+        @NotNull(message = "Payment date is required") Long paymentDate
+) {
+        public PaymentRequestDto(BigDecimal amount, PaymentMode mode,
+                                 PaymentStatus status, Long paymentDate) {
+                this.amount = amount;
+                this.mode = mode;
+                this.status = status;
+                this.paymentDate = paymentDate == null ? System.currentTimeMillis() : paymentDate;
+        }
+}

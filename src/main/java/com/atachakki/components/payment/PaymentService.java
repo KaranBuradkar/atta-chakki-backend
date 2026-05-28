@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public interface PaymentService {
 
@@ -15,8 +17,14 @@ public interface PaymentService {
     @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'READ')")
     PaymentResponseDto findPayment(Long shopId, Long paymentId);
 
+    @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'READ')")
+    List<Long> findPaymentIds(Long shopId, Long customerId);
+
     @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'WRITE')")
     PaymentResponseDto create(Long shopId, Long customerId, PaymentBundleRequestDto requestDto);
+
+    @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'WRITE')")
+    PaymentResponseDto payOrders(Long shopId, Long customerId, PaymentBundleRequestDto requestDto);
 
     @PreAuthorize("@permissionGuard.check(authentication, #shopId, 'PAYMENT', 'WRITE')")
     PaymentResponseDto createByAmount(Long shopId, Long customerId, PaymentRequestDto requestDto);

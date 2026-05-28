@@ -43,6 +43,9 @@ public class Payment {
     @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
+    @Column(name = "payment_date", nullable = false)
+    private Long paymentDate;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Long createdAt;
@@ -83,6 +86,14 @@ public class Payment {
 
     public void setMode(PaymentMode mode) {
         this.mode = mode;
+    }
+
+    public Long getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(Long paymentDate) {
+        this.paymentDate = paymentDate;
     }
 
     public Long getCreatedAt() {

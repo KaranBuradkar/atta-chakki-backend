@@ -11,6 +11,7 @@ public class ShopRequestDto {
 
     @NotBlank(message = "shop must have a name")
     private String name;
+    @NotBlank(message = "shop must have a email")
     private String email;
 
     @NotBlank(message = "shop must have public contact number")

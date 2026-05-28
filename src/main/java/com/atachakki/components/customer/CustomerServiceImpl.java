@@ -88,7 +88,16 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponseDto findCustomer(Long shopId, Long customerId) {
         Customer customer = fetchCustomerById(shopId, customerId);
+        BalanceDto dto = getCustomerBalance(shopId, customer);
+        customer.setBalance(dto.balance);
+        customer.setType(dto.type);
         return customerMapper.toResponseDto(customer);
+    }
+
+    @Override
+    @Transactional
+    public List<Long> findCustomerIds(Long shopId) {
+        return customerRepository.findIdsByShopId(shopId);
     }
 
     @Override
@@ -252,7 +261,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Page<CustomerResponseDto> findAllCustomers(
-            Long shopId, int page, int size, String direction, String name) {
+            Long shopId, Integer page, Integer size, String direction, String name) {
         Sort.Direction dir = ("asc".equalsIgnoreCase(direction)) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Page<Customer> customers = customerRepository
                 .findByShopIdAndDeletedFalse(shopId, PageRequest.of(page, size, dir, name));

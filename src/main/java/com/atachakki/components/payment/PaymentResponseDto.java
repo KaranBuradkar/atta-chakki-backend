@@ -13,23 +13,9 @@ public record PaymentResponseDto (
     Long receiverStaffId,
     String receiverName,
     PaymentStatus status,
+    Long paymentDate,
     Long createdAt,
     Long updatedAt
-){
-    @Override
-    public String toString() {
-        return "{" +
-                "id=" + id +
-                ", amount=" + amount +
-                ", mode=" + mode +
-                ", customerId=" + customerId +
-                ", customerName='" + customerName + '\'' +
-                ", receiverStaffId=" + receiverStaffId +
-                ", receiverName='" + receiverName + '\'' +
-                ", status=" + status +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
-    }
+) {
 }
 

@@ -19,11 +19,11 @@ class CustomerRepositoryTest {
     private CustomerRepository customerRepository;
 
     @Test
-    void findByShopIdAndDeletedFalse() {
+    void findIdsByShopIdAndDeletedFalse() {
     }
 
     @Test
-    void findByShopIdAndNameContainingAndDeletedFalse() {
+    void findIdsByShopIdAndNameContainingAndDeletedFalse() {
     }
 
     @Test

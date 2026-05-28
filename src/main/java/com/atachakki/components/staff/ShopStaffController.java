@@ -61,16 +61,16 @@ public class ShopStaffController extends BaseController {
             summary = "Fetch shop staff by ID",
             description = "Retrieve a single shop staff by staff ID"
     )
-    @GetMapping("/{shopStaffId}")
+    @GetMapping("/{staffId}")
     public ResponseEntity<ApiResponse<StaffResponseDto>> fetchShopStaff(
             @Parameter(description = "Shop ID", required = true)
             @PathVariable Long shopId,
 
             @Parameter(description = "Shop Staff ID", required = true)
-            @PathVariable Long shopStaffId
+            @PathVariable Long staffId
     ) {
         StaffResponseDto responseDto =
-                shopStaffService.findShopStaff(shopId, shopStaffId);
+                shopStaffService.findShopStaff(shopId, staffId);
 
         return apiResponse(HttpStatus.OK, "Shop staff fetched successfully", responseDto);
     }

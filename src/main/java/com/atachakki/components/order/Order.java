@@ -24,7 +24,7 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @Column(name = "order_date")
+    @Column(name = "order_date", nullable = false)
     private Long orderDate;
 
     @Column(name = "quantity", nullable = false)

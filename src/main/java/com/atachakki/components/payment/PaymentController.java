@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(
         name = "Payment Module",
         description = "APIs for managing customer payments"
@@ -107,6 +109,31 @@ public class PaymentController extends BaseController {
     }
 
     @Operation(
+            summary = "Fetch paymentIds",
+            description = "Retrieve Ids of a single customer",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Payment Ids fetched successfully",
+                            content = @Content(
+                                    schema = @Schema(implementation = PaymentResponseDto.class)
+                            )
+                    )
+            }
+    )
+    @GetMapping("/customers/{customerId}/ids")
+    public ResponseEntity<ApiResponse<List<Long>>> fetchPaymentIds(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Customer ID", example = "5", required = true)
+            @PathVariable Long customerId
+    ) {
+        List<Long> paymentIds = paymentService.findPaymentIds(shopId, customerId);
+        return apiResponse(HttpStatus.OK, "PaymentIds fetched successfully", paymentIds);
+    }
+
+    @Operation(
             summary = "Create payment",
             description = "Create a new payment for a customer",
             responses = {
@@ -131,7 +158,7 @@ public class PaymentController extends BaseController {
             @Valid @RequestBody PaymentBundleRequestDto requestDto
     ) {
         PaymentResponseDto responseDto =
-                paymentService.create(shopId, customerId, requestDto);
+                paymentService.payOrders(shopId, customerId, requestDto);
 
         return apiResponse(HttpStatus.CREATED, "Payment successful", responseDto);
     }

@@ -9,14 +9,19 @@ import java.util.List;
 
 public class PaymentBundleRequestDto {
 
-    @NotNull @NotEmpty
+    @NotNull
+    @NotEmpty
     private List<Long> orderIds;
     @NotNull
-    @Valid private PaymentRequestDto paymentRequestDto;
-    @Valid private CustomerLedgerRequestDto customerLedgerRequestDto;
-    @Valid private CustomerLedgerRequestDto nowNewCustomerLedgerRequestDto;
+    @Valid
+    private PaymentRequestDto paymentRequestDto;
+    @Valid
+    private CustomerLedgerRequestDto customerLedgerRequestDto;
+    @Valid
+    private CustomerLedgerRequestDto finalCustomerLedgerRequestDto;
 
-    public PaymentBundleRequestDto() {}
+    public PaymentBundleRequestDto() {
+    }
 
     public List<Long> getOrderIds() {
         return orderIds;
@@ -38,15 +43,19 @@ public class PaymentBundleRequestDto {
         return customerLedgerRequestDto;
     }
 
-    public void setDueOrRefundRequestDto(CustomerLedgerRequestDto customerLedgerRequestDto) {
+    public CustomerLedgerRequestDto getFinalCustomerLedgerRequestDto() {
+        return finalCustomerLedgerRequestDto;
+    }
+
+    public CustomerLedgerRequestDto getCustomerLedgerRequestDto() {
+        return customerLedgerRequestDto;
+    }
+
+    public void setCustomerLedgerRequestDto(CustomerLedgerRequestDto customerLedgerRequestDto) {
         this.customerLedgerRequestDto = customerLedgerRequestDto;
     }
 
-    public CustomerLedgerRequestDto getNowNewDueOrRefundRequestDto() {
-        return nowNewCustomerLedgerRequestDto;
-    }
-
-    public void setNowNewDueOrRefundRequestDto(CustomerLedgerRequestDto nowNewCustomerLedgerRequestDto) {
-        this.nowNewCustomerLedgerRequestDto = nowNewCustomerLedgerRequestDto;
+    public void setFinalCustomerLedgerRequestDto(CustomerLedgerRequestDto finalCustomerLedgerRequestDto) {
+        this.finalCustomerLedgerRequestDto = finalCustomerLedgerRequestDto;
     }
 }

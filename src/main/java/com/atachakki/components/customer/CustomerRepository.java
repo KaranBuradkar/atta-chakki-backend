@@ -3,8 +3,9 @@ package com.atachakki.components.customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
@@ -16,5 +17,10 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByIdAndShopId(Long customerId, Long shopId);
 
-    Optional<Integer> countByShopId(Long id);
+    Optional<Integer> countByShopIdAndDeletedFalse(Long id);
+
+    @Query("""
+            select id from Customer where shop.id = :shopId
+            """)
+    List<Long> findIdsByShopId(Long shopId);
 }

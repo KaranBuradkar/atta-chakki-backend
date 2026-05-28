@@ -1,12 +1,14 @@
 package com.atachakki.components.permissions;
 
 import com.atachakki.components.staff.ShopStaff;
+import com.atachakki.exception.businessLogic.BusinessLogicException;
 import com.atachakki.exception.businessLogic.DuplicatePermissionInsertionException;
 import com.atachakki.exception.entityNotFound.ShopStaffNotFoundException;
 import com.atachakki.exception.entityNotFound.StaffPermissionNotFoundException;
 import com.atachakki.repository.ShopStaffRepository;
 import com.atachakki.repository.StaffPermissionRepository;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -79,14 +81,17 @@ public class StaffPermissionServiceImpl implements StaffPermissionService{
     }
 
     @Override
-    public void delete(Long shopId, Long permissionId) {
-        StaffPermission permission = staffPermissionRepository
-                .findByIdAndShopStaffShopId(permissionId, shopId)
-                .orElseThrow(() -> {
-                    log.debug("permission not found");
-                    return new StaffPermissionNotFoundException(permissionId);
-                });
-        staffPermissionRepository.delete(permission);
+    @Transactional
+    public void delete(Long shopId, List<Long> permissionIds) {
+        List<StaffPermission> permissions = staffPermissionRepository
+                .findByIdInAndShopStaffShopId(permissionIds, shopId);
+
+        if (permissionIds.size() != permissions.size()) {
+            log.debug("User try to delete non-existing permissions");
+            throw new BusinessLogicException("Staff permission ids mismatched",
+                    "user try to delete non-existing permissions");
+        }
+        staffPermissionRepository.deleteAllById(permissionIds);
     }
 
     // Utils

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -15,4 +16,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query(value = "SELECT COALESCE(sum(amount)) from Payment where customer.shop.id =:shopId")
     Optional<BigDecimal> totalCollectionAmount(Long shopId);
+
+    @Query("SELECT id FROM Payment WHERE customer.id =:customerId AND deleted = false")
+    List<Long> findIdsByCustomerId(Long customerId);
 }

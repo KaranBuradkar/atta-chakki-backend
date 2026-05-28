@@ -41,4 +41,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query(value = "select COALESCE(sum(totalAmount)) from Order where customer.shop.id =:shopId " +
             "and paymentStatus = PENDING and deleted = false")
     Optional<BigDecimal> totalBalance(Long shopId);
+
+    @Query("select id from Order where customer.id = :customerId")
+    List<Long> findIdsByCustomerId(Long customerId);
 }

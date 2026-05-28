@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 public class CustomerRequestDto {
 
-    @Size(min = 2, max = 150, message = "Name must be 2 to 150 characters")
+    @Size(min = 2, max = 100, message = "Name must be 2 to 100 characters")
     @NotBlank(message = "Name is required")
     private String name;
 

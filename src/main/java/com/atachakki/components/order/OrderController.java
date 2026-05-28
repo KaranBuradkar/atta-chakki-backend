@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Tag(
         name = "Order Module",
@@ -124,6 +125,29 @@ public class OrderController extends BaseController {
     }
 
     @Operation(
+            summary = "Get total outstanding amount",
+            description = "Returns total pending debt for a shop",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Total debt fetched",
+                            content = @Content(schema = @Schema(implementation = BigDecimal.class))
+                    )
+            }
+    )
+    @GetMapping("/customers/{customerId}/ids")
+    public ResponseEntity<ApiResponse<List<Long>>> getOrderIds(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Customer ID", example = "10", required = true)
+            @PathVariable Long customerId
+    ) {
+        List<Long> orderIds = orderService.findOrderIds(shopId, customerId);
+        return apiResponse(HttpStatus.OK, "Fetch orderIds successfully", orderIds);
+    }
+
+    @Operation(
             summary = "Export customer orders",
             description = "Export customer orders as CSV or other supported formats",
             responses = {
@@ -190,6 +214,42 @@ public class OrderController extends BaseController {
                 orderService.createOrder(shopId, customerId, requestDto);
 
         return apiResponse(HttpStatus.CREATED, "Order created successfully", responseDto);
+    }
+
+    @Operation(
+            summary = "Create all new orders",
+            description = "Create all new order for a customer",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Orders created successfully"),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request body")
+            }
+    )
+    @PostMapping("/customers/{customerId}/all")
+    public ResponseEntity<ApiResponse<List<OrderResponseDto>>> createAllOrders(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Customer ID", example = "10", required = true)
+            @PathVariable Long customerId,
+
+            @RequestBody List<@Valid OrderRequestDto> orderRequests
+    ) {
+        List<OrderResponseDto> responses = orderService.createAllOrders(shopId, customerId, orderRequests);
+
+        return apiResponse(HttpStatus.CREATED, "All order created successfully", responses);
+    }
+
+    @PatchMapping(value = "/customers/{customerId}/cross-orders")
+    public ResponseEntity<ApiResponse<List<OrderResponseDto>>> crossOrders(
+            @Parameter(description = "Shop ID", example = "1", required = true)
+            @PathVariable Long shopId,
+
+            @Parameter(description = "Customer ID", example = "10", required = true)
+            @PathVariable Long customerId,
+
+            @Valid @RequestBody CrossOrdersRequestDto request) {
+        List<OrderResponseDto> orders = orderService.crossOrders(shopId, customerId, request);
+        return apiResponse(HttpStatus.OK, "Order Crossed!!", orders);
     }
 
     @Operation(
