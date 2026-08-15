@@ -21,7 +21,7 @@
     </appender>
 
     <!-- Only your package in DEBUG -->
-    <logger name="com.atachakki" level="DEBUG" additivity="false">
+    <logger name="com.attachakki" level="DEBUG" additivity="false">
         <appender-ref ref="myConsoleAppender"/>
         <appender-ref ref="myFileAppender"/>
     </logger>
