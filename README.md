@@ -2,34 +2,19 @@
 
 A secure, modular, and scalable Spring Boot backend built to digitalize and automate daily operations of an Atta Chakki (Flour Mill) business.
 This backend manages customers, orders, payments, dues/refunds, staff permissions, shop operations, and personalization settings.
-
-🚧 This project is currently under active development.
-More modules, features, tests, and advanced workflows are being added continuously as the system evolves.
 ---
 
 ## 🎯 Project Goals
 
 - Build a real-world, domain-driven backend for a small-scale business
 - Apply clean architecture and modular design
-- Implement secure JWT-based authentication
-- Practice real payment, due, and refund workflows
+- Implement secure JWT-based authentication and permission based access
 - Follow industry-level API design and validation
 - Prepare the backend for future mobile & web clients
----
-
-## 🧠 What This Project Demonstrates
-
-- Real-world business domain modeling
-- Role-based access control (Admin, Staff)
-- Secure authentication & authorization
-- Transactional payment handling (orders + dues + refunds)
-- Partial updates using PATCH
 - Pagination, sorting, and filtering
-- Clean separation of concerns
-- Production-style folder structure
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 - **Java 21**
 - **Spring Boot 3.x**
@@ -41,17 +26,17 @@ More modules, features, tests, and advanced workflows are being added continuous
 - **Validation (Jakarta Validation)**
 ---
 
-## Project Structure
+## 🏗️ Project Structure
 
     atta-chakki-backend/
-    │─ src/main/java/com/atachakki
+    │─ src/main/java/com/attachakki
     │  │─ components/
     │  │  ├─ customer/         # Customer management
     │  │  ├─ order/            # Orders module
     │  │  ├─ payment/          # Payments, dues, refunds
     │  │  ├─ staff/            # Shop staff & roles
     │  │  ├─ shop/             # Shop operations
-    │  │  ├─ due/or/refund/    # Due & refund logic
+    │  │  ├─ customerLedger    # Due & refund logic
     │  │  └─ shop-operations/  # shop-operations tracking
     │  │
     │  ├─ controllers/        # Globle controllers
@@ -62,6 +47,22 @@ More modules, features, tests, and advanced workflows are being added continuous
     │── src/main/resources/             
     │   ├── application.yml   # Database & app configs
     │── pom.xml               # Maven Dependencies
+---
+
+## 🔑 Security Model
+
+The application uses role/permission-based authorization.
+
+Example dynamic authority:
+```txt 
+SHOP_1_CUSTOMER_FULL
+SHOP_1_ORDER_FULL
+SHOP_1_PAYMENT_READ
+SHOP_1_STAFF_FULL
+```
+
+This allows permissions to be scoped to a particular shop instead of giving a user unrestricted access to every shop.
+
 ---
 
 ## 🔐 API Overview
@@ -149,7 +150,7 @@ More modules, features, tests, and advanced workflows are being added continuous
 
 > All protected APIs require: Authorization: Bearer {JwtAccessToken}
 ---
-## **Configuration Overview (Internal)**
+## 📖 **Configuration Overview (Internal)**
 
 This project is configured for a real-world, single-business deployment.
 Environment-specific values such as database credentials, JWT secrets,
@@ -162,4 +163,10 @@ API design, and business workflows rather than deployment instructions.
 ---
 ## 👨‍💻 Author
 - **Karan Buradkar**  
-  [LinkedIn](https://linkedin.com/in/karan-buradkar-70361a258) | [GitHub](https://github.com/KaranBuradkar)
+  [LinkedIn](https://linkedin.com/in/karanburadkar) | [GitHub](https://github.com/KaranBuradkar)
+---
+
+## 🔑 License
+
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
